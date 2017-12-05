@@ -12,14 +12,14 @@ namespace Omnipay\Eway\Message;
  *
  * @link https://eway.io/api-v3/#transparent-redirect
  */
-class RapidPurchaseRequest extends AbstractRequest
+class TransparentPurchaseRequest extends RapidPurchaseRequest
 {
     public function getData()
     {
         $this->validate('amount', 'returnUrl');
 
         $data = $this->getBaseData();
-        $data['Method'] = 'ProcessPayment';
+        $data['Method'] = 'TokenPayment';
         $data['TransactionType'] = $this->getTransactionType();
         $data['RedirectUrl'] = $this->getReturnUrl();
 
@@ -37,18 +37,8 @@ class RapidPurchaseRequest extends AbstractRequest
         return $data;
     }
 
-    public function sendData($data)
-    {
-//        dd($data);
-        $httpResponse = $this->httpClient->post($this->getEndpoint(), null, json_encode($data))
-            ->setAuth($this->getApiKey(), $this->getPassword())
-            ->send();
-
-        return $this->response = new RapidResponse($this, $httpResponse->json());
-    }
-
     protected function getEndpoint()
     {
-        return $this->getEndpointBase().'/CreateAccessCode.json';
+        return $this->getEndpointBase() . '/CreateAccessCode.json';
     }
 }

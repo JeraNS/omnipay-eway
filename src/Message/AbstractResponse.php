@@ -200,6 +200,7 @@ abstract class AbstractResponse extends \Omnipay\Common\Message\AbstractResponse
     public function isSuccessful()
     {
         return isset($this->data['TransactionStatus']) && $this->data['TransactionStatus'];
+//        return isset($this->data['TransactionStatus']) && $this->data['TransactionStatus'] || $this->data['ResponseMessage'] == 'A2000';
     }
 
     public function getTransactionReference()

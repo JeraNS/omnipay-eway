@@ -50,6 +50,10 @@ class RapidResponse extends AbstractResponse implements RedirectResponseInterfac
             return $this->data['Customer']['TokenCustomerID'];
         }
 
+        if (isset($this->data['TokenCustomerID'])) {
+            return $this->data['TokenCustomerID'];
+        }
+
         return null;
     }
 
