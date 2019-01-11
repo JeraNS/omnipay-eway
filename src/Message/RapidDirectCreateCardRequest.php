@@ -5,6 +5,8 @@
 
 namespace Omnipay\Eway\Message;
 
+use Omnipay\Omnipay;
+
 /**
  * eWAY Rapid Direct Create Card Request
  *
@@ -59,7 +61,7 @@ class RapidDirectCreateCardRequest extends RapidDirectAbstractRequest
     {
         $data = $this->getBaseData();
 
-        $data['Payment'] = array();
+        $data['Payment'] = [];
         $data['Payment']['TotalAmount'] = 0;
 
         $data['Method'] = 'CreateTokenCustomer';
@@ -69,15 +71,38 @@ class RapidDirectCreateCardRequest extends RapidDirectAbstractRequest
 
     protected function getEndpoint()
     {
-        return $this->getEndpointBase().'/DirectPayment.json';
+        return $this->getEndpointBase() . '/DirectPayment.json';
     }
 
     public function sendData($data)
     {
-        $httpResponse = $this->httpClient->post($this->getEndpoint(), null, json_encode($data))
-            ->setAuth($this->getApiKey(), $this->getPassword())
-            ->send();
+        $headers = [
+            'Authorization' => 'Basic ' . base64_encode($this->getApiKey() . ':' . $this->getPassword())
+        ];
 
-        return $this->response = new RapidDirectCreateCardResponse($this, $httpResponse->json());
+        $httpResponse = $this->httpClient->request('POST', $this->getEndpoint(), $headers, json_encode($data));
+
+        $this->response = new RapidDirectCreateCardResponse(
+            $this,
+            json_decode((string) $httpResponse->getBody(), true)
+        );
+
+        if ($this->getAction() === 'Purchase' && $this->response->isSuccessful()) {
+            $purchaseGateway = Omnipay::create('Eway_RapidDirect');
+            $purchaseGateway->setApiKey($this->getApiKey());
+            $purchaseGateway->setPassword($this->getPassword());
+            $purchaseGateway->setTestMode($this->getTestMode());
+            $purchaseResponse = $purchaseGateway->purchase([
+                'amount' => $this->getAmount(),
+                'currency' => $this->getCurrency(),
+                'description' => $this->getDescription(),
+                'transactionId' => $this->getTransactionId(),
+                'card' => $this->getCard(),
+                'cardReference' => $this->response->getCardReference(),
+            ])->send();
+            $this->response->setPurchaseResponse($purchaseResponse);
+        }
+
+        return $this->response;
     }
 }
